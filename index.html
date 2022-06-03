@@ -1,0 +1,118 @@
+<!DOCTYPE HTML>
+
+<html lang="pt-BR">
+
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<meta name="viewport" content="width=device-width">
+	<title>Pesquisa - Câmara</title>
+</head>
+
+<body onload="getPartidos()">
+
+	<header>
+		<h1>Pesquisa de Parlamentares por Partido</h1>
+	</header>
+	
+	<div class="main-container">
+		<div class="partido">
+			<h2> Selecione o partido abaixo</h2>
+			<select name="partido" id="partidos" onchange="getDeputados()">
+				<option disabled selected value> -- selecione uma opção -- </option>
+			</select>
+		</div>
+		<div class="lista-deputados" id="deputados">
+			
+		</div>
+	</div>
+
+	<style>
+		body {
+			background-color: #ccc;
+			padding: 20px;
+		}
+		header, .partido { text-align: center; }
+		.main-container {
+			width: 90%;
+			background-color: #fff;
+			padding: 20px;
+			margin-left: auto;
+			margin-right: auto;
+			border-radius: 4px;
+		}
+		.lista-deputados {
+			width: 100%;
+			margin-top: 24px;
+			margin-left: auto;
+			margin-right: auto;
+			display: grid;
+			column-gap: 24px;
+			row-gap: 24px;
+			grid-template-columns: repeat(auto-fit, minmax(400px, 1fr))
+		}
+		.deputado {
+			border: 1px solid #666;
+			border-radius: 4px;
+		}
+		.deputado img {
+			max-width: 22%;
+			float: left;
+		}
+		.deputado div {
+			display: inline;
+			width: 68%;
+			padding: 10px;
+			float: left;
+			word-wrap: break-word
+		}
+		.deputado p { margin: 0 }
+		
+		@media only screen and (max-width: 768px) {
+			.lista-deputados {
+				grid-template-columns: repeat(auto-fit, minmax(250px, 1fr))
+			}
+		}
+	</style>
+
+	<script>
+		async function getPartidos() {
+			const partidos = await makeAPICall('partidos');
+			const options = document.getElementById('partidos');
+			
+			partidos['dados'].forEach(partido => {
+				let option = '<option value="' + partido['sigla'] + '">' + partido['nome'] + '</option>';
+				options.innerHTML += option;
+			});
+		}
+
+		async function getDeputados() {
+			const sigla = document.getElementById("partidos").value;
+			const deputados = await makeAPICall('deputados?siglaPartido=' + sigla);
+			const htmlDeputados = document.getElementById('deputados');
+			htmlDeputados.innerHTML = '';
+			
+			if (deputados['dados'].length === 0) {
+				htmlDeputados.innerHTML = '<p>Nenhum deputado encontrado</p>';
+			} else {
+				deputados['dados'].forEach(deputado => {
+					let html = '<div class="deputado"><img src="' + deputado['urlFoto'] + '"><div><p>' + deputado['nome'] + '</p><p>E-mail: ' + deputado['email'] + '</p><p>Estado: ' + deputado['siglaUf'] + '</div></div>';
+					htmlDeputados.innerHTML += html;
+				});
+			}
+		}
+		
+		async function makeAPICall( query ) {
+			const response = await fetch( 'https://dadosabertos.camara.leg.br/api/v2/' + query, {
+				method: 'GET',
+				headers: {
+				  'accept': 'application/json'
+				},
+			})
+			
+			return response.json();
+		}
+		
+	</script>
+</body>
+
+</html>
